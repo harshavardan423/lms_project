@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% block title %}Questions — {{ assignment.title }}{% endblock %}
+{% block page_title %}Assignment Questions{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h5 class="fw-bold mb-0">{{ assignment.title }}</h5>
+        <small class="text-muted">{{ assignment.subject.name }} — {{ assignment.class_ref.name }}</small>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#addQModal">
+            <i class="bi bi-plus-lg me-1"></i>Add Manually
+        </button>
+        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#aiModal">
+            <i class="bi bi-robot me-1"></i>Generate with AI
+        </button>
+    </div>
+</div>
+
+{% if questions %}
+<div class="mb-3 d-flex align-items-center gap-3">
+    <span class="text-muted" style="font-size:.82rem;">{{ questions|length }} questions</span>
+    <span class="text-muted" style="font-size:.82rem;">·</span>
+    <span class="text-muted" style="font-size:.82rem;">Total marks: <strong class="text-dark">{{ questions|sum(attribute='marks') }}</strong></span>
+</div>
+{% endif %}
+
+{% for q in questions %}
+<div class="card mb-2">
+    <div class="card-body py-3">
+        <div class="d-flex justify-content-between align-items-start gap-3">
+            <div class="flex-grow-1">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="fw-bold text-muted" style="font-size:.75rem;">Q{{ loop.index }}</span>
+                    <span class="badge {% if q.type == 'mcq' %}bg-primary{% elif q.type == 'descriptive' %}bg-success{% elif q.type == 'numerical' %}bg-warning text-dark{% elif q.type == 'multi_select' %}bg-info text-dark{% else %}bg-secondary{% endif %}" style="font-size:.68rem;">
+                        {{ q.type.replace('_',' ').title() }}
+                    </span>
+                    <span class="badge" style="background:#f1f5f9;color:#475569;font-size:.68rem;">{{ q.marks }} marks</span>
+                </div>
+                <p class="mb-1 fw-semibold" style="font-size:.875rem;">{{ q.text }}</p>
+                {% if q.options %}
+                    {% set opts = q.options | from_json %}
+                    <div class="d-flex flex-wrap gap-2 mt-2">
+                    {% for o in opts %}
+                    <span class="px-2 py-1 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;font-size:.75rem;color:{% if loop.index0|string == q.correct_answer %}#065f46{% else %}#64748b{% endif %}">
+                        {{ loop.index0 }}) {{ o }}{% if loop.index0|string == q.correct_answer %} ✓{% endif %}
+                    </span>
+                    {% endfor %}
+                    </div>
+                {% endif %}
+                {% if q.correct_answer and q.type not in ['mcq','multi_select'] %}
+                <div class="mt-1"><small class="text-success"><i class="bi bi-check-circle me-1"></i>Answer: {{ q.correct_answer }}</small></div>
+                {% endif %}
+            </div>
+            <form method="POST" class="flex-shrink-0">
+                <input type="hidden" name="action" value="delete_question">
+                <input type="hidden" name="question_id" value="{{ q.id }}">
+                <button class="btn btn-sm btn-outline-danger" title="Remove"><i class="bi bi-trash"></i></button>
+            </form>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5 text-muted">
+        <i class="bi bi-question-circle fs-1 d-block mb-2 opacity-25"></i>
+        No questions yet. Use <strong>Generate with AI</strong> to create a full assignment, or add questions manually.
+    </div>
+</div>
+{% endif %}
+
+<div class="mt-4">
+    <a href="{{ url_for('teacher.assignments') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back to Assignments
+    </a>
+</div>
+
+
+<!-- ── AI Generate Modal ────────────────────────────────────────────── -->
+<div class="modal fade" id="aiModal" tabindex="-1">
+    <div class="modal-dialog modal-lg"><div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title"><i class="bi bi-robot me-2" style="color:#6366f1"></i>Generate Assignment with AI</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="POST" id="aiForm">
+            <div class="modal-body">
+                <input type="hidden" name="action" value="ai_generate">
+
+                <div class="mb-3 p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;">
+                    <div class="fw-semibold mb-1" style="font-size:.8rem;color:#374151;">Subject</div>
+                    <div style="font-size:.875rem;">{{ assignment.subject.name }}</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Describe the assignment you want</label>
+                    <textarea name="ai_prompt" id="aiPrompt" class="form-control" rows="5" required
+                        placeholder="e.g. Create a 20-mark test on Photosynthesis for Class 10. Include 3 MCQs, 1 multi-select, 1 numerical and a 6-mark descriptive question. Keep it medium difficulty."></textarea>
+                    <div class="form-text">Be as specific as you like — mention topic, total marks, number of each question type, difficulty, etc.</div>
+                </div>
+
+                <div class="p-3 rounded" style="background:#ede9fe;border:1px solid #ddd6fe;">
+                    <div class="fw-semibold mb-2" style="font-size:.78rem;color:#5b21b6;"><i class="bi bi-lightbulb me-1"></i>Example prompts</div>
+                    <div class="d-flex flex-column gap-1">
+                        {% set examples = [
+                            "Create a 15-mark quiz on Zeroes of Polynomials with 4 MCQs and 1 descriptive. Medium difficulty.",
+                            "Make a 25-mark test on Carbon Compounds: 3 MCQs worth 2 marks each, 1 multi-select for 4 marks, and a 15-mark descriptive. Hard difficulty.",
+                            "Generate a simple 10-mark assignment on Mean, Median and Mode with 2 easy MCQs and 1 numerical."
+                        ] %}
+                        {% for ex in examples %}
+                        <button type="button" class="text-start btn p-0 border-0" style="font-size:.78rem;color:#6d28d9;background:none;" onclick="document.getElementById('aiPrompt').value='{{ ex }}'">
+                            <i class="bi bi-arrow-right-short"></i> {{ ex }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                {% if questions %}
+                <div class="alert alert-warning mt-3 mb-0" style="font-size:.8rem;">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    This assignment already has {{ questions|length }} question(s). AI-generated questions will be <strong>added</strong> to the existing ones.
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="aiSubmitBtn">
+                    <i class="bi bi-robot me-1"></i>Generate Assignment
+                </button>
+            </div>
+        </form>
+    </div></div>
+</div>
+
+
+<!-- ── Manual Add Question Modal ───────────────────────────────────── -->
+<div class="modal fade" id="addQModal" tabindex="-1">
+    <div class="modal-dialog modal-lg"><div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Add Question Manually</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="POST">
+            <div class="modal-body">
+                <input type="hidden" name="action" value="add_question">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Question Type</label>
+                        <select name="type" class="form-select" id="qtype" onchange="toggleFields()">
+                            <option value="mcq">MCQ</option>
+                            <option value="multi_select">Multiple Select</option>
+                            <option value="descriptive">Descriptive</option>
+                            <option value="numerical">Numerical</option>
+                            <option value="file_upload">File Upload</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Marks</label>
+                        <input type="number" name="marks" class="form-control" value="2" step="0.5" min="0.5">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Question Text</label>
+                        <textarea name="text" class="form-control" rows="3" required></textarea>
+                    </div>
+                    <div class="col-12" id="optionsField">
+                        <label class="form-label">Options <small class="text-muted fw-normal">— JSON array e.g. ["Option A","Option B","Option C","Option D"]</small></label>
+                        <input type="text" name="options" class="form-control" placeholder='["Option A","Option B","Option C","Option D"]'>
+                    </div>
+                    <div class="col-12" id="answerField">
+                        <label class="form-label">Correct Answer <small class="text-muted fw-normal" id="answerHint">— index: 0, 1, 2, 3</small></label>
+                        <input type="text" name="correct_answer" class="form-control">
+                    </div>
+                    <div class="col-md-6 d-none" id="toleranceField">
+                        <label class="form-label">Tolerance <small class="text-muted fw-normal">(±)</small></label>
+                        <input type="number" name="tolerance" class="form-control" step="0.01">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary">Add Question</button>
+            </div>
+        </form>
+    </div></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleFields() {
+    const t = document.getElementById('qtype').value;
+    document.getElementById('optionsField').style.display = ['mcq','multi_select'].includes(t) ? '' : 'none';
+    document.getElementById('toleranceField').classList.toggle('d-none', t !== 'numerical');
+    document.getElementById('answerField').style.display = t === 'file_upload' ? 'none' : '';
+    const hints = {
+        mcq: 'index: 0, 1, 2, 3',
+        multi_select: 'JSON array e.g. ["0","2"]',
+        descriptive: 'keywords comma-separated',
+        numerical: 'exact number'
+    };
+    document.getElementById('answerHint').textContent = '— ' + (hints[t] || '');
+}
+toggleFields();
+
+document.getElementById('aiForm').addEventListener('submit', function() {
+    const btn = document.getElementById('aiSubmitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generating…';
+});
+</script>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Report — {{ assignment.title }}{% endblock %}
+{% block page_title %}Assignment Report{% endblock %}
+{% block content %}
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h5 class="fw-bold mb-1">{{ assignment.title }}</h5>
+                <div class="text-muted small">{{ assignment.subject.name }} | Submitted {{ submission.submitted_at.strftime('%d %b %Y %H:%M') }}</div>
+            </div>
+            <div class="col-md-3 text-center">
+                <div class="fw-bold" style="font-size:2.2rem;color:#20c997">{{ submission.final_score | round(1) }}</div>
+                <div class="text-muted small">/ {{ total_marks }} marks</div>
+            </div>
+            <div class="col-md-3 text-center">
+                {% set pct = ((submission.final_score / total_marks) * 100) | round | int %}
+                <div class="progress mb-1" style="height:12px;border-radius:8px">
+                    <div class="progress-bar {% if pct >= 75 %}bg-success{% elif pct >= 50 %}bg-warning{% else %}bg-danger{% endif %}" style="width:{{ pct }}%"></div>
+                </div>
+                <small class="text-muted">{{ pct }}% score</small>
+            </div>
+        </div>
+        {% if submission.teacher_feedback %}
+        <div class="mt-3 p-3 bg-light rounded">
+            <strong><i class="bi bi-chat-quote me-2 text-primary"></i>Teacher Feedback:</strong><br>
+            {{ submission.teacher_feedback }}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<h6 class="fw-bold mb-3">Question-wise Breakdown</h6>
+{% for answer in submission.answers %}
+{% set q = answer.question %}
+<div class="card mb-3 {% if answer.is_correct %}border-success{% else %}border-danger{% endif %}" style="border-left-width:4px!important;">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+                <span class="badge bg-secondary me-1">Q{{ loop.index }}</span>
+                <span class="badge {% if q.type == 'mcq' %}bg-primary{% elif q.type == 'descriptive' %}bg-success{% elif q.type == 'numerical' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %}">{{ q.type.replace('_',' ').title() }}</span>
+            </div>
+            <div class="text-end">
+                {% set score = answer.teacher_score if answer.teacher_score is not none else answer.ai_score %}
+                <span class="fw-bold {% if answer.is_correct %}text-success{% else %}text-danger{% endif %}">
+                    {{ score | round(1) if score is not none else 0 }} / {{ q.marks }}
+                </span>
+                {% if answer.teacher_override %}<br><small class="text-muted">Teacher override</small>{% endif %}
+            </div>
+        </div>
+        <p class="fw-semibold mb-2">{{ q.text }}</p>
+        <div class="mb-2">
+            <small class="text-muted">Your Answer:</small>
+            <div class="bg-light p-2 rounded small mt-1">{{ answer.answer_text or '(No answer)' }}</div>
+        </div>
+        {% if not answer.is_correct %}
+        {% if q.correct_answer and q.type != 'descriptive' %}
+        <div class="mb-2">
+            <small class="text-success fw-semibold"><i class="bi bi-check-circle me-1"></i>Correct Answer: {{ q.correct_answer }}</small>
+        </div>
+        {% endif %}
+        {% if answer.ai_feedback %}
+        <div class="bg-info bg-opacity-10 rounded p-2 small">
+            <i class="bi bi-robot me-1 text-info"></i><strong>AI Explanation:</strong> {{ answer.ai_feedback }}
+        </div>
+        {% endif %}
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+
+<div class="mt-3">
+    <a href="{{ url_for('student.assignments') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back to Assignments</a>
+</div>
+{% endblock %}

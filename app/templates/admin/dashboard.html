@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — LMS{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+<div class="row g-3 mb-4">
+    {% for key, val in stats.items() %}
+    {% set colors = {'districts':'#4f8ef7','blocks':'#20c997','schools':'#fd7e14','users':'#6f42c1','teachers':'#fd7e14','students':'#20c997','classes':'#0dcaf0'} %}
+    {% set icons = {'districts':'bi-map','blocks':'bi-geo','schools':'bi-building','users':'bi-people','teachers':'bi-person-video3','students':'bi-person-badge','classes':'bi-collection'} %}
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="background: {{ colors.get(key, '#4f8ef7') }}">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div style="font-size:2rem;font-weight:700;">{{ val }}</div>
+                    <div style="font-size:.85rem;opacity:.85">{{ key.title() }}</div>
+                </div>
+                <i class="bi {{ icons.get(key, 'bi-grid') }}" style="font-size:2rem;opacity:.4"></i>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-white border-0 pt-3 pb-2">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-lightning-charge text-warning me-2"></i>Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-2">
+                    {% if current_user.role == 'super_admin' %}
+                    <div class="col-6"><a href="{{ url_for('admin.districts') }}" class="btn btn-outline-primary w-100"><i class="bi bi-map me-1"></i>Manage Districts</a></div>
+                    <div class="col-6"><a href="{{ url_for('admin.blocks') }}" class="btn btn-outline-primary w-100"><i class="bi bi-geo me-1"></i>Manage Blocks</a></div>
+                    {% endif %}
+                    <div class="col-6"><a href="{{ url_for('admin.schools') }}" class="btn btn-outline-success w-100"><i class="bi bi-building me-1"></i>Manage Schools</a></div>
+                    <div class="col-6"><a href="{{ url_for('admin.users') }}" class="btn btn-outline-info w-100"><i class="bi bi-person-plus me-1"></i>Add User</a></div>
+                    <div class="col-6"><a href="{{ url_for('admin.classes') }}" class="btn btn-outline-warning w-100"><i class="bi bi-collection me-1"></i>Manage Classes</a></div>
+                    <div class="col-6"><a href="{{ url_for('admin.subjects') }}" class="btn btn-outline-secondary w-100"><i class="bi bi-book me-1"></i>Manage Subjects</a></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-white border-0 pt-3 pb-2">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-info-circle text-info me-2"></i>System Info</h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-borderless">
+                    <tr><td class="text-muted">Logged in as</td><td class="fw-semibold">{{ current_user.full_name }}</td></tr>
+                    <tr><td class="text-muted">Role</td><td><span class="badge badge-role role-{{ current_user.role }}">{{ current_user.role.replace('_',' ').title() }}</span></td></tr>
+                    {% if current_user.district %}<tr><td class="text-muted">District</td><td>{{ current_user.district.name }}</td></tr>{% endif %}
+                    {% if current_user.block %}<tr><td class="text-muted">Block</td><td>{{ current_user.block.name }}</td></tr>{% endif %}
+                    {% if current_user.school %}<tr><td class="text-muted">School</td><td>{{ current_user.school.name }}</td></tr>{% endif %}
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

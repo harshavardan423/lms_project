@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}{{ assignment.title }} — Attempt{% endblock %}
+{% block page_title %}Assignment: {{ assignment.title }}{% endblock %}
+{% block content %}
+<div class="alert alert-warning d-flex align-items-center" id="tabWarning" style="display:none!important">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    <strong>Warning!</strong>&nbsp;You switched tabs or left the window. A second violation will auto-submit.
+</div>
+
+<div class="card mb-3">
+    <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="fw-bold mb-1">{{ assignment.title }}</h5>
+            {% if assignment.instructions %}<p class="text-muted mb-0 small">{{ assignment.instructions }}</p>{% endif %}
+        </div>
+        <div class="text-end">
+            <div class="small text-muted">Deadline</div>
+            <div class="fw-semibold text-danger">{{ assignment.deadline.strftime('%d %b %Y %H:%M') }}</div>
+        </div>
+    </div>
+</div>
+
+<form method="POST" id="assignmentForm">
+    {% for q in questions %}
+    <div class="card mb-3">
+        <div class="card-header bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">Question {{ loop.index }}</span>
+                <span class="badge bg-secondary">{{ q.marks }} marks</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <p class="fw-semibold mb-3">{{ q.text }}</p>
+
+            {% if q.type == 'mcq' %}
+                {% if q.options %}
+                {% set opts = q.options | from_json %}
+                {% for opt in opts %}
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="radio" name="answer_{{ q.id }}" id="opt_{{ q.id }}_{{ loop.index0 }}" value="{{ loop.index0 }}" required>
+                    <label class="form-check-label" for="opt_{{ q.id }}_{{ loop.index0 }}">{{ opt }}</label>
+                </div>
+                {% endfor %}
+                {% endif %}
+
+            {% elif q.type == 'multi_select' %}
+                {% if q.options %}
+                {% set opts = q.options | from_json %}
+                <div class="small text-muted mb-2">Select all that apply.</div>
+                {% for opt in opts %}
+                <div class="form-check mb-2">
+                    <input class="form-check-input multi-{{ q.id }}" type="checkbox" value="{{ loop.index0 }}" id="mopt_{{ q.id }}_{{ loop.index0 }}">
+                    <label class="form-check-label" for="mopt_{{ q.id }}_{{ loop.index0 }}">{{ opt }}</label>
+                </div>
+                {% endfor %}
+                <input type="hidden" name="answer_{{ q.id }}" id="multi_hidden_{{ q.id }}">
+                {% endif %}
+
+            {% elif q.type == 'numerical' %}
+                <input type="number" name="answer_{{ q.id }}" class="form-control" step="any" placeholder="Enter your numerical answer" required>
+                {% if q.tolerance %}<small class="text-muted">Tolerance: ±{{ q.tolerance }}</small>{% endif %}
+
+            {% elif q.type == 'descriptive' %}
+                <textarea name="answer_{{ q.id }}" class="form-control" rows="5" placeholder="Write your answer here..." required></textarea>
+
+            {% elif q.type == 'file_upload' %}
+                <div class="alert alert-info small">File upload: In this demo, enter a description of your file.</div>
+                <input type="text" name="answer_{{ q.id }}" class="form-control" placeholder="Describe your answer (file upload demo)">
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+
+    <div class="d-flex justify-content-between mt-3">
+        <a href="{{ url_for('student.assignments') }}" class="btn btn-outline-secondary">Cancel</a>
+        <button type="submit" class="btn btn-success btn-lg" id="submitBtn">
+            <i class="bi bi-send me-2"></i>Submit Assignment
+        </button>
+    </div>
+</form>
+{% endblock %}
+{% block extra_js %}
+<script>
+// Multi-select: collect checked values into hidden input
+document.querySelectorAll('[class^="multi-"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+        const qid = cb.className.split('-')[1];
+        const checked = [...document.querySelectorAll('.multi-' + qid + ':checked')].map(x => x.value);
+        document.getElementById('multi_hidden_' + qid).value = JSON.stringify(checked);
+    });
+});
+
+// Tab switch detection
+let violations = 0;
+const warn = document.getElementById('tabWarning');
+function handleVisibility() {
+    if (document.hidden) {
+        violations++;
+        if (violations === 1) {
+            warn.style.display = 'flex';
+            warn.style.removeProperty('display');
+        } else if (violations >= 2) {
+            alert('Second violation detected. Auto-submitting now.');
+            document.getElementById('assignmentForm').submit();
+        }
+    }
+}
+document.addEventListener('visibilitychange', handleVisibility);
+window.addEventListener('blur', handleVisibility);
+</script>
+{% endblock %}

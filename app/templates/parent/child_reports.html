@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ student.full_name }} Reports{% endblock %}
+{% block page_title %}{{ student.full_name }}'s Reports{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="fw-bold mb-0">{{ student.full_name }} — Assignment Reports</h5>
+    <a href="{{ url_for('parent.dashboard') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back</a>
+</div>
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light"><tr><th>Assignment</th><th>Subject</th><th>Submitted</th><th>Score</th></tr></thead>
+            <tbody>
+            {% for sub in submissions %}
+            <tr>
+                <td class="fw-semibold">{{ sub.assignment.title }}</td>
+                <td>{{ sub.assignment.subject.name }}</td>
+                <td>{{ sub.submitted_at.strftime('%d %b %Y') }}</td>
+                <td>
+                    {% set total = sub.assignment.questions | sum(attribute='marks') %}
+                    <span class="fw-bold">{{ sub.final_score | round(1) if sub.final_score is not none else '-' }} / {{ total }}</span>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="text-center text-muted py-4">No approved reports yet.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

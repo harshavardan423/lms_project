@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}{{ subject.name }}{% endblock %}
+{% block page_title %}{{ subject.name }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h5 class="fw-bold mb-0">{{ subject.name }}</h5>
+        <small class="text-muted">{{ subject.class_ref.name }}</small>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+        <div class="text-end">
+            <small class="text-muted">Progress</small>
+            <div class="fw-bold text-success">{{ progress }}%</div>
+        </div>
+        <a href="{{ url_for('student.courses') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+    </div>
+</div>
+<div class="mb-3">
+    <div class="progress" style="height:10px;border-radius:8px">
+        <div class="progress-bar bg-success" style="width:{{ progress }}%"></div>
+    </div>
+</div>
+{% for module in modules %}
+<div class="card mb-3">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <span class="fw-semibold"><i class="bi bi-folder2-open me-2 text-warning"></i>{{ module.title }}</span>
+        {% set module_topics = module.topics|selectattr('is_active')|list %}
+        <small class="text-muted">{{ module_topics|length }} topics</small>
+    </div>
+    <div class="card-body p-0">
+        {% for topic in module.topics if topic.is_active %}
+        <a href="{{ url_for('student.topic_view', subject_id=subject.id, topic_id=topic.id) }}"
+           class="d-flex align-items-center px-3 py-2 border-bottom text-decoration-none text-dark topic-row">
+            {% if topic.id in viewed_ids %}
+            <i class="bi bi-check-circle-fill text-success me-2"></i>
+            {% else %}
+            <i class="bi bi-circle text-muted me-2"></i>
+            {% endif %}
+            <div class="flex-grow-1">
+                <div class="small fw-semibold">{{ topic.title }}</div>
+                {% if topic.content_text %}<div class="text-muted" style="font-size:.73rem;">{{ topic.content_text[:80] }}...</div>{% endif %}
+            </div>
+            <i class="bi bi-chevron-right text-muted"></i>
+        </a>
+        {% else %}
+        <div class="text-muted text-center py-3 small">No topics in this module.</div>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<div class="card"><div class="card-body text-center text-muted py-5">
+    <i class="bi bi-folder-x fs-1 d-block mb-2"></i>No content available yet.
+</div></div>
+{% endfor %}
+{% endblock %}
+{% block extra_css %}<style>.topic-row:hover{background:#f8f9fa;}</style>{% endblock %}

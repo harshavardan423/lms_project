@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}My Assignments{% endblock %}
+{% block page_title %}My Assignments{% endblock %}
+{% block content %}
+<h5 class="fw-bold mb-3">My Assignments</h5>
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light"><tr><th>Title</th><th>Subject</th><th>Deadline</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody>
+            {% for a in assignments %}
+            {% set status = status_map.get(a.id, 'not_submitted') %}
+            {% set past_deadline = a.deadline < now %}
+            <tr>
+                <td class="fw-semibold">{{ a.title }}</td>
+                <td>{{ a.subject.name }}</td>
+                <td>
+                    {% if past_deadline %}
+                    <span class="text-danger small"><i class="bi bi-calendar-x me-1"></i>{{ a.deadline.strftime('%d %b %Y') }}</span>
+                    {% else %}
+                    <span class="text-success small"><i class="bi bi-calendar-check me-1"></i>{{ a.deadline.strftime('%d %b %Y %H:%M') }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if status == 'not_submitted' %}
+                        {% if past_deadline %}<span class="badge bg-danger">❌ Missed</span>
+                        {% else %}<span class="badge bg-secondary">❌ Not Submitted</span>{% endif %}
+                    {% elif status == 'pending_review' %}<span class="badge bg-warning text-dark">⏳ Pending Review</span>
+                    {% elif status == 'approved' %}<span class="badge bg-success">✅ Reviewed</span>
+                    {% elif status == 'submitted' %}<span class="badge bg-info text-dark">⏳ Submitted</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if status == 'approved' %}
+                    <a href="{{ url_for('student.assignment_report', id=a.id) }}" class="btn btn-sm btn-success">View Report</a>
+                    {% elif status == 'not_submitted' and not past_deadline %}
+                    <a href="{{ url_for('student.attempt_assignment', id=a.id) }}" class="btn btn-sm btn-primary">Attempt</a>
+                    {% elif status in ['submitted','pending_review'] %}
+                    <span class="text-muted small">Awaiting review</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="text-center text-muted py-4">No assignments found.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

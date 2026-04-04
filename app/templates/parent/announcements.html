@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Announcements{% endblock %}
+{% block page_title %}School Announcements{% endblock %}
+{% block content %}
+<h5 class="fw-bold mb-3">Announcements</h5>
+<div class="row g-3">
+{% for a in announcements %}
+<div class="col-12">
+    <div class="card">
+        <div class="card-body">
+            <h6 class="fw-bold">{{ a.title }}</h6>
+            <p class="text-muted mb-2">{{ a.body }}</p>
+            <small class="text-muted"><i class="bi bi-calendar me-1"></i>{{ a.created_at.strftime('%d %b %Y') }}</small>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="col-12"><div class="card"><div class="card-body text-center text-muted py-4">No announcements yet.</div></div></div>
+{% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Users — LMS{% endblock %}
+{% block page_title %}Users{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="fw-bold mb-0">Users</h5>
+    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addModal"><i class="bi bi-plus-lg me-1"></i>Add User</button>
+</div>
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light"><tr><th>#</th><th>Name</th><th>Username</th><th>Role</th><th>School</th><th>Actions</th></tr></thead>
+            <tbody>
+            {% for u in users %}
+            <tr>
+                <td>{{ u.id }}</td>
+                <td class="fw-semibold">{{ u.full_name }}</td>
+                <td><code>{{ u.username }}</code></td>
+                <td><span class="badge badge-role role-{{ u.role }}">{{ u.role.replace('_',' ').title() }}</span></td>
+                <td>{{ u.school.name if u.school else '—' }}</td>
+                <td>
+                    {% if u.id != current_user.id %}
+                    <form method="POST" class="d-inline" onsubmit="return confirm('Deactivate user?')">
+                        <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{ u.id }}">
+                        <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="text-center text-muted py-4">No users found.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addModal" tabindex="-1">
+    <div class="modal-dialog modal-lg"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">Add User</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <form method="POST">
+            <div class="modal-body">
+                <input type="hidden" name="action" value="create">
+                <div class="row g-3">
+                    <div class="col-md-6"><label class="form-label">Full Name</label><input type="text" name="full_name" class="form-control" required></div>
+                    <div class="col-md-6"><label class="form-label">Username</label><input type="text" name="username" class="form-control" required></div>
+                    <div class="col-md-6"><label class="form-label">Password</label><input type="password" name="password" class="form-control" required value="pass123"></div>
+                    <div class="col-md-6"><label class="form-label">Email</label><input type="email" name="email" class="form-control"></div>
+                    <div class="col-md-6">
+                        <label class="form-label">Role</label>
+                        <select name="role" class="form-select" required>
+                            <option value="student">Student</option>
+                            <option value="teacher">Teacher</option>
+                            <option value="parent">Parent</option>
+                            <option value="school_admin">School Admin</option>
+                            <option value="block_admin">Block Admin</option>
+                            <option value="district_admin">District Admin</option>
+                            <option value="super_admin">Super Admin</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6"><label class="form-label">School</label>
+                        <select name="school_id" class="form-select">
+                            <option value="">— None —</option>
+                            {% for s in schools %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6"><label class="form-label">Block</label>
+                        <select name="block_id" class="form-select">
+                            <option value="">— None —</option>
+                            {% for b in blocks %}<option value="{{ b.id }}">{{ b.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6"><label class="form-label">District</label>
+                        <select name="district_id" class="form-select">
+                            <option value="">— None —</option>
+                            {% for d in districts %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary">Create User</button></div>
+        </form>
+    </div></div>
+</div>
+{% endblock %}

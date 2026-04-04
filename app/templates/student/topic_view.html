@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}{{ topic.title }}{% endblock %}
+{% block page_title %}{{ topic.title }}{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb" style="font-size:.78rem;">
+        <li class="breadcrumb-item"><a href="{{ url_for('student.courses') }}">Courses</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('student.course_detail', subject_id=subject.id) }}">{{ subject.name }}</a></li>
+        <li class="breadcrumb-item active">{{ topic.title }}</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="fw-bold mb-0">{{ topic.title }}</h5>
+    <span class="badge" style="background:#d1fae5;color:#065f46;font-size:.75rem;padding:5px 10px;">
+        <i class="bi bi-check-circle-fill me-1"></i>Marked as viewed
+    </span>
+</div>
+
+<!-- ── Video embed ─────────────────────────────────────────────────── -->
+{% if topic.video_url %}
+<div class="card mb-4">
+    <div class="card-header d-flex align-items-center gap-2">
+        <i class="bi bi-play-circle-fill text-danger"></i>
+        <span class="fw-semibold" style="font-size:.875rem;">Video</span>
+    </div>
+    <div class="card-body p-0">
+        {% set url = topic.video_url %}
+        {% if 'youtube.com/watch' in url %}
+            {% set vid_id = url.split('v=')[1].split('&')[0] %}
+            <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;">
+                <iframe src="https://www.youtube.com/embed/{{ vid_id }}" frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:0 0 16px 16px;"></iframe>
+            </div>
+        {% elif 'youtu.be/' in url %}
+            {% set vid_id = url.split('youtu.be/')[1].split('?')[0] %}
+            <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;">
+                <iframe src="https://www.youtube.com/embed/{{ vid_id }}" frameborder="0"
+                    allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:0 0 16px 16px;"></iframe>
+            </div>
+        {% elif 'drive.google.com' in url %}
+            {% if '/file/d/' in url %}
+                {% set file_id = url.split('/file/d/')[1].split('/')[0] %}
+                <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;">
+                    <iframe src="https://drive.google.com/file/d/{{ file_id }}/preview" frameborder="0"
+                        allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:0 0 16px 16px;"></iframe>
+                </div>
+            {% else %}
+                <div class="p-3">
+                    <a href="{{ url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-play-circle me-1"></i>Open Video in Google Drive
+                    </a>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="p-3">
+                <a href="{{ url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-play-circle me-1"></i>Open Video
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- ── Text content ────────────────────────────────────────────────── -->
+{% if topic.content_text %}
+<div class="card mb-4">
+    <div class="card-header d-flex align-items-center gap-2">
+        <i class="bi bi-file-text text-primary"></i>
+        <span class="fw-semibold" style="font-size:.875rem;">Reading Material</span>
+    </div>
+    <div class="card-body" style="line-height:1.85;font-size:.9rem;white-space:pre-wrap;">{{ topic.content_text }}</div>
+</div>
+{% endif %}
+
+<!-- ── PDF viewer ──────────────────────────────────────────────────── -->
+{% if topic.pdf_path %}
+<div class="card mb-4">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-file-earmark-pdf-fill text-warning"></i>
+            <span class="fw-semibold" style="font-size:.875rem;">PDF / Notes</span>
+        </div>
+        <a href="{{ url_for('static', filename=topic.pdf_path) }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-download me-1"></i>Download
+        </a>
+    </div>
+    <div class="card-body p-0">
+        <iframe src="{{ url_for('static', filename=topic.pdf_path) }}"
+            width="100%" height="600px"
+            style="border:none;border-radius:0 0 16px 16px;">
+        </iframe>
+    </div>
+</div>
+{% endif %}
+
+<!-- ── Image ──────────────────────────────────────────────────────── -->
+{% if topic.file_path %}
+<div class="card mb-4">
+    <div class="card-header d-flex align-items-center gap-2">
+        <i class="bi bi-image text-info"></i>
+        <span class="fw-semibold" style="font-size:.875rem;">Diagram / Image</span>
+    </div>
+    <div class="card-body text-center">
+        <img src="{{ url_for('static', filename=topic.file_path) }}"
+             class="img-fluid rounded" style="max-height:500px;" alt="{{ topic.title }}">
+    </div>
+</div>
+{% endif %}
+
+{% if not topic.content_text and not topic.video_url and not topic.pdf_path and not topic.file_path %}
+<div class="card mb-4">
+    <div class="card-body text-center text-muted py-5">
+        <i class="bi bi-hourglass fs-1 d-block mb-2 opacity-25"></i>
+        Content coming soon.
+    </div>
+</div>
+{% endif %}
+
+<div class="d-flex justify-content-between mt-2">
+    <a href="{{ url_for('student.course_detail', subject_id=subject.id) }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back to Course
+    </a>
+</div>
+
+<!-- AI Chat FAB -->
+<button class="fab" onclick="toggleChat()" title="Ask AI about this topic">
+    <i class="bi bi-robot"></i>
+</button>
+
+<div class="ai-drawer" id="aiDrawer">
+    <div class="ai-drawer-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-robot me-2"></i>AI Study Assistant</span>
+        <button class="btn btn-sm btn-link text-white p-0" onclick="toggleChat()"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="ai-drawer-body" id="aiMessages">
+        <div class="ai-msg-bot"><span>Hi! I'm here to help you with <strong>{{ topic.title }}</strong>. Ask me anything!</span></div>
+    </div>
+    <div class="ai-drawer-footer">
+        <input type="text" id="aiInput" class="form-control form-control-sm" placeholder="Ask a question…" onkeydown="if(event.key==='Enter')sendMsg()">
+        <button class="btn btn-primary btn-sm px-3" onclick="sendMsg()"><i class="bi bi-send"></i></button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleChat() { document.getElementById('aiDrawer').classList.toggle('open'); }
+function sendMsg() {
+    const inp = document.getElementById('aiInput');
+    const msg = inp.value.trim(); if (!msg) return;
+    const box = document.getElementById('aiMessages');
+    box.innerHTML += `<div class="ai-msg-user"><span>${msg}</span></div>`;
+    inp.value = '';
+    box.scrollTop = box.scrollHeight;
+    fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({topic_id: {{ topic.id }}, subject_id: {{ subject.id }}, message: msg})
+    }).then(r => r.json()).then(d => {
+        box.innerHTML += `<div class="ai-msg-bot"><span>${d.reply}</span></div>`;
+        box.scrollTop = box.scrollHeight;
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Parent Dashboard{% endblock %}
+{% block page_title %}Parent Dashboard{% endblock %}
+{% block content %}
+<h5 class="fw-bold mb-3">My Children</h5>
+<div class="row g-3 mb-4">
+{% for child in children %}
+<div class="col-md-4">
+    <div class="card">
+        <div class="card-body">
+            <div class="d-flex align-items-center mb-3">
+                <div class="rounded-circle me-3 bg-success text-white d-flex align-items-center justify-content-center fw-bold" style="width:46px;height:46px;">{{ child.full_name[:2].upper() }}</div>
+                <div>
+                    <div class="fw-bold">{{ child.full_name }}</div>
+                    <small class="text-muted">{{ child.username }}</small>
+                </div>
+            </div>
+            <div class="d-grid gap-2">
+                <a href="{{ url_for('parent.child_progress', student_id=child.id) }}" class="btn btn-outline-success btn-sm"><i class="bi bi-bar-chart me-1"></i>View Progress</a>
+                <a href="{{ url_for('parent.child_reports', student_id=child.id) }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-file-text me-1"></i>View Reports</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="col-12"><div class="card"><div class="card-body text-center text-muted py-4">No children linked to your account.</div></div></div>
+{% endfor %}
+</div>
+<div class="card">
+    <div class="card-header bg-white border-0 pt-3 pb-2">
+        <h6 class="mb-0 fw-bold"><i class="bi bi-megaphone text-primary me-2"></i>School Announcements</h6>
+    </div>
+    <div class="card-body p-0">
+        {% for a in announcements %}
+        <div class="px-3 py-2 border-bottom">
+            <div class="fw-semibold">{{ a.title }}</div>
+            <div class="text-muted small">{{ a.body[:100] }}{% if a.body|length > 100 %}...{% endif %}</div>
+            <small class="text-muted">{{ a.created_at.strftime('%d %b %Y') }}</small>
+        </div>
+        {% else %}
+        <div class="text-muted text-center py-3 small">No announcements.</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

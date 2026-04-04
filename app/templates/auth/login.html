@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block auth_content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sign in — EduLMS</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+body {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    background: #0f172a;
+}
+.login-left {
+    flex: 1;
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px;
+    position: relative;
+    overflow: hidden;
+}
+.login-left::before {
+    content: '';
+    position: absolute;
+    top: -120px; left: -120px;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(99,102,241,.2) 0%, transparent 70%);
+    pointer-events: none;
+}
+.login-left::after {
+    content: '';
+    position: absolute;
+    bottom: -80px; right: -80px;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(129,140,248,.12) 0%, transparent 70%);
+    pointer-events: none;
+}
+.brand { display: flex; align-items: center; gap: 12px; margin-bottom: 64px; }
+.brand-icon {
+    width: 42px; height: 42px;
+    background: #6366f1;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; color: #fff;
+    box-shadow: 0 0 0 6px rgba(99,102,241,.18);
+}
+.brand-name { color: #fff; font-size: 1.15rem; font-weight: 700; letter-spacing: -.02em; }
+.hero-title { color: #fff; font-size: 2.4rem; font-weight: 700; line-height: 1.2; letter-spacing: -.03em; margin-bottom: 16px; }
+.hero-title span { color: #818cf8; }
+.hero-sub { color: rgba(255,255,255,.45); font-size: .9rem; line-height: 1.6; max-width: 400px; }
+.features { margin-top: 48px; display: flex; flex-direction: column; gap: 14px; }
+.feature { display: flex; align-items: center; gap: 12px; color: rgba(255,255,255,.6); font-size: .835rem; }
+.feature-dot { width: 6px; height: 6px; background: #6366f1; border-radius: 50%; flex-shrink: 0; }
+
+.login-right {
+    width: 460px;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px 50px;
+}
+.login-header { margin-bottom: 32px; }
+.login-header h2 { font-size: 1.6rem; font-weight: 700; color: #0f172a; letter-spacing: -.03em; margin-bottom: 6px; }
+.login-header p { color: #64748b; font-size: .85rem; }
+
+.form-label { font-size: .78rem; font-weight: 600; color: #374151; margin-bottom: 5px; }
+.form-control {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 9px;
+    padding: 10px 14px;
+    font-family: inherit;
+    font-size: .85rem;
+    color: #0f172a;
+    transition: border-color .15s, box-shadow .15s;
+}
+.form-control:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.12); outline: none; }
+.input-group-text {
+    background: #f8fafc; border: 1.5px solid #e2e8f0; border-right: none;
+    border-radius: 9px 0 0 9px; color: #94a3b8; font-size: .9rem;
+}
+.input-group .form-control { border-left: none; border-radius: 0 9px 9px 0; }
+.input-group .form-control:focus { border-color: #6366f1; }
+
+.btn-signin {
+    background: #6366f1; color: #fff; border: none;
+    border-radius: 9px; padding: 11px; font-size: .875rem; font-weight: 600;
+    width: 100%; cursor: pointer; font-family: inherit;
+    transition: all .15s; letter-spacing: -.01em;
+}
+.btn-signin:hover { background: #4f46e5; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(99,102,241,.3); }
+
+.demo-box {
+    background: #f8fafc; border: 1px solid #e2e8f0;
+    border-radius: 10px; padding: 14px 16px; margin-top: 20px;
+}
+.demo-box-title { font-size: .72rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .07em; margin-bottom: 10px; }
+.demo-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip {
+    padding: 3px 10px; border-radius: 20px; font-size: .72rem; font-weight: 600;
+    cursor: pointer; border: 1px solid transparent; transition: all .12s;
+    font-family: inherit;
+}
+.chip:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,.1); }
+.chip-purple { background: #ede9fe; color: #6d28d9; border-color: #ddd6fe; }
+.chip-blue   { background: #dbeafe; color: #1d4ed8; border-color: #bfdbfe; }
+.chip-cyan   { background: #cffafe; color: #0e7490; border-color: #a5f3fc; }
+.chip-green  { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+.chip-orange { background: #ffedd5; color: #c2410c; border-color: #fed7aa; }
+.chip-teal   { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
+.chip-gray   { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
+
+.alert { border-radius: 9px; border: none; font-size: .82rem; padding: 10px 14px; margin-bottom: 16px; }
+.alert-danger { background: #fee2e2; color: #991b1b; }
+
+@media (max-width: 768px) {
+    .login-left { display: none; }
+    .login-right { width: 100%; padding: 40px 28px; }
+}
+</style>
+</head>
+<body>
+<div class="login-left">
+    <div class="brand">
+        <div class="brand-icon"><i class="bi bi-mortarboard-fill"></i></div>
+        <span class="brand-name">EduLMS</span>
+    </div>
+    <div>
+        <div class="hero-title">Learning that<br><span>works for everyone.</span></div>
+        <div class="hero-sub">A unified platform for districts, schools, teachers, students and parents — all in one place.</div>
+    </div>
+    <div class="features">
+        <div class="feature"><div class="feature-dot"></div>District → Block → School hierarchy with scoped access</div>
+        <div class="feature"><div class="feature-dot"></div>AI-assisted assignment evaluation and study chat</div>
+        <div class="feature"><div class="feature-dot"></div>Real-time progress tracking for students and parents</div>
+        <div class="feature"><div class="feature-dot"></div>Role-based dashboards for every user type</div>
+    </div>
+</div>
+
+<div class="login-right">
+    <div class="login-header">
+        <h2>Welcome back</h2>
+        <p>Sign in to your EduLMS account to continue</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}{% for cat, msg in messages %}
+    <div class="alert alert-{{ cat }}">{{ msg }}</div>
+    {% endfor %}{% endif %}
+    {% endwith %}
+
+    <form method="POST">
+        <div class="mb-3">
+            <label class="form-label">Username</label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-person"></i></span>
+                <input type="text" name="username" id="username" class="form-control" placeholder="Enter your username" required autofocus>
+            </div>
+        </div>
+        <div class="mb-4">
+            <label class="form-label">Password</label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                <input type="password" name="password" class="form-control" placeholder="Enter your password" required>
+            </div>
+        </div>
+        <button type="submit" class="btn-signin">Sign in <i class="bi bi-arrow-right ms-1"></i></button>
+    </form>
+
+    <div class="demo-box">
+        <div class="demo-box-title">Demo accounts — password: pass123</div>
+        <div class="demo-chips">
+            <button class="chip chip-purple" onclick="setUser('superadmin')">superadmin</button>
+            <button class="chip chip-blue"   onclick="setUser('districtadmin1')">districtadmin1</button>
+            <button class="chip chip-cyan"   onclick="setUser('blockadmin1')">blockadmin1</button>
+            <button class="chip chip-green"  onclick="setUser('schooladmin1')">schooladmin1</button>
+            <button class="chip chip-orange" onclick="setUser('teacher1')">teacher1</button>
+            <button class="chip chip-orange" onclick="setUser('teacher2')">teacher2</button>
+            <button class="chip chip-teal"   onclick="setUser('student1')">student1</button>
+            <button class="chip chip-teal"   onclick="setUser('student2')">student2</button>
+            <button class="chip chip-gray"   onclick="setUser('parent1')">parent1</button>
+        </div>
+    </div>
+</div>
+
+<script>function setUser(u){ document.getElementById('username').value = u; }</script>
+</body>
+</html>
+{% endblock %}
