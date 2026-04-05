@@ -23,9 +23,24 @@
         <span class="fw-semibold d-flex align-items-center gap-2">
             <i class="bi bi-folder2-open text-warning"></i>{{ module.title }}
         </span>
-        <span class="badge" style="background:#f1f5f9;color:#64748b;font-weight:500;">
-            {{ module.topics|selectattr('is_active')|list|length }} topics
-        </span>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge" style="background:#f1f5f9;color:#64748b;font-weight:500;">
+                {{ module.topics|selectattr('is_active')|list|length }} topics
+            </span>
+            <button class="btn btn-sm btn-outline-secondary py-0 px-2 edit-module-btn"
+                data-module-id="{{ module.id }}"
+                data-module-title="{{ module.title }}"
+                title="Rename module">
+                <i class="bi bi-pencil" style="font-size:.7rem;"></i>
+            </button>
+            <form method="POST" class="d-inline" onsubmit="return confirm('Delete this module and all its topics?')">
+                <input type="hidden" name="action" value="delete_module">
+                <input type="hidden" name="module_id" value="{{ module.id }}">
+                <button class="btn btn-sm btn-outline-danger py-0 px-2" title="Delete module">
+                    <i class="bi bi-trash" style="font-size:.7rem;"></i>
+                </button>
+            </form>
+        </div>
     </div>
     <div class="card-body p-0">
         {% for topic in module.topics if topic.is_active %}
@@ -48,9 +63,30 @@
                     {% endif %}
                 </div>
             </div>
+            <div class="d-flex gap-1 flex-shrink-0">
+                {# Use data attributes — safe against any special chars in content #}
+                <button class="btn btn-sm btn-outline-secondary py-1 px-2 edit-topic-btn"
+                    data-topic-id="{{ topic.id }}"
+                    data-module-id="{{ module.id }}"
+                    data-title="{{ topic.title }}"
+                    data-content="{{ topic.content_text or '' }}"
+                    data-video="{{ topic.video_url or '' }}"
+                    data-pdf="{{ topic.pdf_path or '' }}"
+                    data-image="{{ topic.file_path or '' }}"
+                    title="Edit topic">
+                    <i class="bi bi-pencil" style="font-size:.75rem;"></i>
+                </button>
+                <form method="POST" class="d-inline" onsubmit="return confirm('Delete this topic?')">
+                    <input type="hidden" name="action" value="delete_topic">
+                    <input type="hidden" name="topic_id" value="{{ topic.id }}">
+                    <button class="btn btn-sm btn-outline-danger py-1 px-2" title="Delete topic">
+                        <i class="bi bi-trash" style="font-size:.75rem;"></i>
+                    </button>
+                </form>
+            </div>
         </div>
         {% else %}
-        <div class="text-muted text-center py-4" style="font-size:.82rem;">No topics in this module yet.</div>
+        <div class="text-muted text-center py-4" style="font-size:.82rem;">No topics yet — add one above.</div>
         {% endfor %}
     </div>
 </div>
@@ -63,7 +99,8 @@
 </div>
 {% endfor %}
 
-<!-- Add Module Modal -->
+
+<!-- ── Add Module Modal ───────────────────────────────────────────── -->
 <div class="modal fade" id="addModuleModal" tabindex="-1">
     <div class="modal-dialog"><div class="modal-content">
         <div class="modal-header">
@@ -73,10 +110,8 @@
         <form method="POST">
             <div class="modal-body">
                 <input type="hidden" name="action" value="add_module">
-                <div class="mb-3">
-                    <label class="form-label">Module Title</label>
-                    <input type="text" name="title" class="form-control" required placeholder="e.g. Chapter 1: Introduction to Algebra">
-                </div>
+                <label class="form-label">Module Title</label>
+                <input type="text" name="title" class="form-control" required placeholder="e.g. Chapter 1: Introduction to Algebra">
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -86,7 +121,31 @@
     </div></div>
 </div>
 
-<!-- Add Topic Modal -->
+
+<!-- ── Edit Module Modal ──────────────────────────────────────────── -->
+<div class="modal fade" id="editModuleModal" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Rename Module</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="POST">
+            <div class="modal-body">
+                <input type="hidden" name="action" value="edit_module">
+                <input type="hidden" name="module_id" id="editModuleId">
+                <label class="form-label">Module Title</label>
+                <input type="text" name="title" id="editModuleTitle" class="form-control" required>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save</button>
+            </div>
+        </form>
+    </div></div>
+</div>
+
+
+<!-- ── Add Topic Modal ────────────────────────────────────────────── -->
 <div class="modal fade" id="addTopicModal" tabindex="-1">
     <div class="modal-dialog modal-lg"><div class="modal-content">
         <div class="modal-header">
@@ -109,26 +168,20 @@
                     </div>
                     <div class="col-12">
                         <label class="form-label">Text Content <span class="text-muted fw-normal">(optional)</span></label>
-                        <textarea name="content_text" class="form-control" rows="5" placeholder="Write or paste topic content here..."></textarea>
+                        <textarea name="content_text" class="form-control" rows="4" placeholder="Write or paste topic notes here..."></textarea>
                     </div>
-
-                    <!-- Video URL -->
                     <div class="col-12">
                         <label class="form-label"><i class="bi bi-play-circle text-danger me-1"></i>Video URL <span class="text-muted fw-normal">(YouTube or Google Drive)</span></label>
-                        <input type="url" name="video_url" class="form-control" placeholder="https://www.youtube.com/watch?v=... or https://drive.google.com/file/d/...">
-                        <div class="form-text">Paste a YouTube or Google Drive video link. It will be embedded for students.</div>
+                        <input type="url" name="video_url" class="form-control" placeholder="https://www.youtube.com/watch?v=...">
+                        <div class="form-text">Will be embedded for students automatically.</div>
                     </div>
-
-                    <!-- PDF Upload -->
                     <div class="col-md-6">
-                        <label class="form-label"><i class="bi bi-file-earmark-pdf text-warning me-1"></i>PDF / Notes <span class="text-muted fw-normal">(optional)</span></label>
+                        <label class="form-label"><i class="bi bi-file-earmark-pdf text-warning me-1"></i>PDF / Notes</label>
                         <input type="file" name="pdf_file" class="form-control" accept=".pdf">
-                        <div class="form-text">Max 10MB. Will be shown inline to students.</div>
+                        <div class="form-text">Max 10MB. Shown inline to students.</div>
                     </div>
-
-                    <!-- Image Upload -->
                     <div class="col-md-6">
-                        <label class="form-label"><i class="bi bi-image text-primary me-1"></i>Image <span class="text-muted fw-normal">(optional)</span></label>
+                        <label class="form-label"><i class="bi bi-image text-primary me-1"></i>Image</label>
                         <input type="file" name="image_file" class="form-control" accept=".jpg,.jpeg,.png">
                         <div class="form-text">JPG or PNG, max 10MB.</div>
                     </div>
@@ -141,4 +194,135 @@
         </form>
     </div></div>
 </div>
+
+
+<!-- ── Edit Topic Modal ───────────────────────────────────────────── -->
+<div class="modal fade" id="editTopicModal" tabindex="-1">
+    <div class="modal-dialog modal-lg"><div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Edit Topic</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="POST" enctype="multipart/form-data">
+            <div class="modal-body">
+                <input type="hidden" name="action" value="edit_topic">
+                <input type="hidden" name="topic_id" id="editTopicId">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label">Module</label>
+                        <select name="module_id" id="editTopicModuleId" class="form-select">
+                            {% for m in modules %}<option value="{{ m.id }}">{{ m.title }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Topic Title</label>
+                        <input type="text" name="title" id="editTopicTitle" class="form-control" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Text Content</label>
+                        <textarea name="content_text" id="editTopicContent" class="form-control" rows="5"></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label"><i class="bi bi-play-circle text-danger me-1"></i>Video URL</label>
+                        <input type="url" name="video_url" id="editTopicVideo" class="form-control" placeholder="https://www.youtube.com/watch?v=...">
+                        <div class="form-text">Leave blank to keep existing, clear to remove.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><i class="bi bi-file-earmark-pdf text-warning me-1"></i>PDF / Notes</label>
+                        <div id="currentPdfInfo" class="mb-2 d-none">
+                            <div class="d-flex align-items-center gap-2 p-2 rounded" style="background:#fef3c7;border:1px solid #fde68a;">
+                                <i class="bi bi-file-earmark-pdf text-warning"></i>
+                                <span style="font-size:.78rem;" id="currentPdfName">Current PDF</span>
+                                <a id="currentPdfLink" href="#" target="_blank" class="btn btn-xs btn-sm py-0 px-1 btn-outline-secondary ms-auto" style="font-size:.7rem;">View</a>
+                            </div>
+                            <div class="form-check mt-1">
+                                <input class="form-check-input" type="checkbox" name="remove_pdf" id="removePdfCheck" value="1">
+                                <label class="form-check-label text-danger" for="removePdfCheck" style="font-size:.78rem;">Remove PDF</label>
+                            </div>
+                        </div>
+                        <input type="file" name="pdf_file" class="form-control" accept=".pdf">
+                        <div class="form-text">Upload to add or replace. Leave empty to keep existing.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><i class="bi bi-image text-primary me-1"></i>Image</label>
+                        <div id="currentImageInfo" class="mb-2 d-none">
+                            <div class="d-flex align-items-center gap-2 p-2 rounded" style="background:#dbeafe;border:1px solid #bfdbfe;">
+                                <i class="bi bi-image text-primary"></i>
+                                <span style="font-size:.78rem;">Current image attached</span>
+                            </div>
+                            <div class="form-check mt-1">
+                                <input class="form-check-input" type="checkbox" name="remove_image" id="removeImageCheck" value="1">
+                                <label class="form-check-label text-danger" for="removeImageCheck" style="font-size:.78rem;">Remove image</label>
+                            </div>
+                        </div>
+                        <input type="file" name="image_file" class="form-control" accept=".jpg,.jpeg,.png">
+                        <div class="form-text">Upload to add or replace.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </form>
+    </div></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Edit module — read from data attributes, no inline JS strings
+document.querySelectorAll('.edit-module-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        document.getElementById('editModuleId').value = this.dataset.moduleId;
+        document.getElementById('editModuleTitle').value = this.dataset.moduleTitle;
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('editModuleModal')).show();
+    });
+});
+
+// Edit topic — data attributes handle any special chars safely
+document.querySelectorAll('.edit-topic-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        document.getElementById('editTopicId').value = this.dataset.topicId;
+        document.getElementById('editTopicTitle').value = this.dataset.title;
+        document.getElementById('editTopicContent').value = this.dataset.content;
+        document.getElementById('editTopicVideo').value = this.dataset.video;
+
+        // Reset remove checkboxes
+        document.getElementById('removePdfCheck').checked = false;
+        document.getElementById('removeImageCheck').checked = false;
+
+        // Show current PDF info if one exists
+        var pdfPath = this.dataset.pdf;
+        var pdfBlock = document.getElementById('currentPdfInfo');
+        if (pdfPath) {
+            var filename = pdfPath.split('/').pop();
+            document.getElementById('currentPdfName').textContent = filename;
+            document.getElementById('currentPdfLink').href = '/static/' + pdfPath;
+            pdfBlock.classList.remove('d-none');
+        } else {
+            pdfBlock.classList.add('d-none');
+        }
+
+        // Show current image info if one exists
+        var imgPath = this.dataset.image;
+        var imgBlock = document.getElementById('currentImageInfo');
+        if (imgPath) {
+            imgBlock.classList.remove('d-none');
+        } else {
+            imgBlock.classList.add('d-none');
+        }
+
+        // Set the correct module in the dropdown
+        var sel = document.getElementById('editTopicModuleId');
+        for (var i = 0; i < sel.options.length; i++) {
+            if (sel.options[i].value == this.dataset.moduleId) {
+                sel.selectedIndex = i;
+                break;
+            }
+        }
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('editTopicModal')).show();
+    });
+});
+</script>
 {% endblock %}

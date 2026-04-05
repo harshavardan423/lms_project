@@ -32,9 +32,17 @@
             <div class="flex-grow-1">
                 <div class="d-flex align-items-center gap-2 mb-2">
                     <span class="fw-bold text-muted" style="font-size:.75rem;">Q{{ loop.index }}</span>
-                    <span class="badge {% if q.type == 'mcq' %}bg-primary{% elif q.type == 'descriptive' %}bg-success{% elif q.type == 'numerical' %}bg-warning text-dark{% elif q.type == 'multi_select' %}bg-info text-dark{% else %}bg-secondary{% endif %}" style="font-size:.68rem;">
-                        {{ q.type.replace('_',' ').title() }}
-                    </span>
+                    {% if q.type == 'mcq' %}
+                        <span class="badge bg-primary" style="font-size:.68rem;">MCQ</span>
+                    {% elif q.type == 'descriptive' %}
+                        <span class="badge bg-success" style="font-size:.68rem;">Descriptive</span>
+                    {% elif q.type == 'numerical' %}
+                        <span class="badge bg-warning text-dark" style="font-size:.68rem;">Numerical</span>
+                    {% elif q.type == 'multi_select' %}
+                        <span class="badge bg-info text-dark" style="font-size:.68rem;">Multi Select</span>
+                    {% else %}
+                        <span class="badge bg-secondary" style="font-size:.68rem;">{{ q.type.replace('_',' ').title() }}</span>
+                    {% endif %}
                     <span class="badge" style="background:#f1f5f9;color:#475569;font-size:.68rem;">{{ q.marks }} marks</span>
                 </div>
                 <p class="mb-1 fw-semibold" style="font-size:.875rem;">{{ q.text }}</p>
@@ -42,14 +50,22 @@
                     {% set opts = q.options | from_json %}
                     <div class="d-flex flex-wrap gap-2 mt-2">
                     {% for o in opts %}
-                    <span class="px-2 py-1 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;font-size:.75rem;color:{% if loop.index0|string == q.correct_answer %}#065f46{% else %}#64748b{% endif %}">
-                        {{ loop.index0 }}) {{ o }}{% if loop.index0|string == q.correct_answer %} ✓{% endif %}
-                    </span>
+                        {% if loop.index0 | string == q.correct_answer %}
+                            <span class="px-2 py-1 rounded" style="background:#d1fae5;border:1px solid #a7f3d0;font-size:.75rem;color:#065f46;">
+                                {{ loop.index0 }}) {{ o }} ✓
+                            </span>
+                        {% else %}
+                            <span class="px-2 py-1 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;font-size:.75rem;color:#64748b;">
+                                {{ loop.index0 }}) {{ o }}
+                            </span>
+                        {% endif %}
                     {% endfor %}
                     </div>
                 {% endif %}
-                {% if q.correct_answer and q.type not in ['mcq','multi_select'] %}
-                <div class="mt-1"><small class="text-success"><i class="bi bi-check-circle me-1"></i>Answer: {{ q.correct_answer }}</small></div>
+                {% if q.correct_answer and q.type != 'mcq' and q.type != 'multi_select' %}
+                    <div class="mt-1">
+                        <small class="text-success"><i class="bi bi-check-circle me-1"></i>Answer: {{ q.correct_answer }}</small>
+                    </div>
                 {% endif %}
             </div>
             <form method="POST" class="flex-shrink-0">
@@ -67,7 +83,7 @@
         No questions yet. Use <strong>Generate with AI</strong> to create a full assignment, or add questions manually.
     </div>
 </div>
-{% endif %}
+{% endfor %}
 
 <div class="mt-4">
     <a href="{{ url_for('teacher.assignments') }}" class="btn btn-outline-secondary btn-sm">
@@ -76,7 +92,7 @@
 </div>
 
 
-<!-- ── AI Generate Modal ────────────────────────────────────────────── -->
+<!-- ── AI Generate Modal ──────────────────────────────────────────── -->
 <div class="modal fade" id="aiModal" tabindex="-1">
     <div class="modal-dialog modal-lg"><div class="modal-content">
         <div class="modal-header">
@@ -95,23 +111,24 @@
                 <div class="mb-3">
                     <label class="form-label">Describe the assignment you want</label>
                     <textarea name="ai_prompt" id="aiPrompt" class="form-control" rows="5" required
-                        placeholder="e.g. Create a 20-mark test on Photosynthesis for Class 10. Include 3 MCQs, 1 multi-select, 1 numerical and a 6-mark descriptive question. Keep it medium difficulty."></textarea>
-                    <div class="form-text">Be as specific as you like — mention topic, total marks, number of each question type, difficulty, etc.</div>
+                        placeholder="e.g. Create a 20-mark test on Photosynthesis for Class 10. Include 3 MCQs, 1 multi-select, 1 numerical and a 6-mark descriptive. Medium difficulty."></textarea>
+                    <div class="form-text">Mention topic, total marks, question types, difficulty — the more detail the better.</div>
                 </div>
 
                 <div class="p-3 rounded" style="background:#ede9fe;border:1px solid #ddd6fe;">
-                    <div class="fw-semibold mb-2" style="font-size:.78rem;color:#5b21b6;"><i class="bi bi-lightbulb me-1"></i>Example prompts</div>
-                    <div class="d-flex flex-column gap-1">
-                        {% set examples = [
-                            "Create a 15-mark quiz on Zeroes of Polynomials with 4 MCQs and 1 descriptive. Medium difficulty.",
-                            "Make a 25-mark test on Carbon Compounds: 3 MCQs worth 2 marks each, 1 multi-select for 4 marks, and a 15-mark descriptive. Hard difficulty.",
-                            "Generate a simple 10-mark assignment on Mean, Median and Mode with 2 easy MCQs and 1 numerical."
-                        ] %}
-                        {% for ex in examples %}
-                        <button type="button" class="text-start btn p-0 border-0" style="font-size:.78rem;color:#6d28d9;background:none;" onclick="document.getElementById('aiPrompt').value='{{ ex }}'">
-                            <i class="bi bi-arrow-right-short"></i> {{ ex }}
+                    <div class="fw-semibold mb-2" style="font-size:.78rem;color:#5b21b6;">
+                        <i class="bi bi-lightbulb me-1"></i>Example prompts — click to use
+                    </div>
+                    <div class="d-flex flex-column gap-1" id="examplePrompts">
+                        <button type="button" class="example-prompt text-start btn p-0 border-0" style="font-size:.78rem;color:#6d28d9;background:none;">
+                            <i class="bi bi-arrow-right-short"></i> Create a 15-mark quiz on Zeroes of Polynomials with 4 MCQs and 1 descriptive. Medium difficulty.
                         </button>
-                        {% endfor %}
+                        <button type="button" class="example-prompt text-start btn p-0 border-0" style="font-size:.78rem;color:#6d28d9;background:none;">
+                            <i class="bi bi-arrow-right-short"></i> Make a 25-mark test on Carbon Compounds: 3 MCQs worth 2 marks each, 1 multi-select for 4 marks, and a 15-mark descriptive. Hard difficulty.
+                        </button>
+                        <button type="button" class="example-prompt text-start btn p-0 border-0" style="font-size:.78rem;color:#6d28d9;background:none;">
+                            <i class="bi bi-arrow-right-short"></i> Generate a simple 10-mark assignment on Mean, Median and Mode with 2 easy MCQs and 1 numerical.
+                        </button>
                     </div>
                 </div>
 
@@ -133,7 +150,7 @@
 </div>
 
 
-<!-- ── Manual Add Question Modal ───────────────────────────────────── -->
+<!-- ── Manual Add Question Modal ─────────────────────────────────── -->
 <div class="modal fade" id="addQModal" tabindex="-1">
     <div class="modal-dialog modal-lg"><div class="modal-content">
         <div class="modal-header">
@@ -201,6 +218,13 @@ function toggleFields() {
     document.getElementById('answerHint').textContent = '— ' + (hints[t] || '');
 }
 toggleFields();
+
+// Example prompt click-to-fill
+document.querySelectorAll('.example-prompt').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.getElementById('aiPrompt').value = this.textContent.replace('▶ ', '').replace(/^\s*›\s*/, '').trim();
+    });
+});
 
 document.getElementById('aiForm').addEventListener('submit', function() {
     const btn = document.getElementById('aiSubmitBtn');

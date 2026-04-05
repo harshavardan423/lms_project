@@ -86,6 +86,53 @@ def course_topics(subject_id):
             db.session.add(t); db.session.commit()
             flash('Topic added.', 'success')
 
+        elif action == 'edit_topic':
+            t = Topic.query.get(int(request.form['topic_id']))
+            if t:
+                t.title = request.form['title']
+                t.content_text = request.form.get('content_text', '')
+                t.video_url = request.form.get('video_url', '').strip() or None
+                t.module_id = int(request.form['module_id'])
+                # PDF — remove if checkbox ticked, replace if new file uploaded
+                if request.form.get('remove_pdf'):
+                    t.pdf_path = None
+                elif 'pdf_file' in request.files:
+                    pdf = request.files['pdf_file']
+                    if pdf and pdf.filename and allowed_file(pdf.filename, ALLOWED_PDF):
+                        t.pdf_path = save_upload(pdf, 'pdfs')
+                # Image — remove if checkbox ticked, replace if new file uploaded
+                if request.form.get('remove_image'):
+                    t.file_path = None
+                elif 'image_file' in request.files:
+                    img = request.files['image_file']
+                    if img and img.filename and allowed_file(img.filename, ALLOWED_IMG):
+                        t.file_path = save_upload(img, 'images')
+                db.session.commit()
+                flash('Topic updated.', 'success')
+
+        elif action == 'delete_topic':
+            t = Topic.query.get(int(request.form['topic_id']))
+            if t:
+                t.is_active = False
+                db.session.commit()
+                flash('Topic removed.', 'warning')
+
+        elif action == 'edit_module':
+            m = Module.query.get(int(request.form['module_id']))
+            if m:
+                m.title = request.form['title']
+                db.session.commit()
+                flash('Module renamed.', 'success')
+
+        elif action == 'delete_module':
+            m = Module.query.get(int(request.form['module_id']))
+            if m:
+                for t in m.topics:
+                    t.is_active = False
+                m.is_active = False
+                db.session.commit()
+                flash('Module and its topics removed.', 'warning')
+
     modules = Module.query.filter_by(subject_id=subject_id, is_active=True).order_by(Module.order).all()
     return render_template('teacher/course_topics.html', subject=subject, modules=modules)
 
@@ -95,7 +142,14 @@ def course_topics(subject_id):
 def assignments():
     if request.method == 'POST':
         action = request.form.get('action')
-        if action == 'create':
+        if action == 'delete':
+            a = Assignment.query.get(int(request.form['assignment_id']))
+            if a and a.teacher_id == current_user.id:
+                a.is_active = False
+                db.session.commit()
+                flash('Assignment deleted.', 'warning')
+
+        elif action == 'create':
             deadline = datetime.strptime(request.form['deadline'], '%Y-%m-%dT%H:%M')
             cls = Class.query.get(int(request.form['class_id']))
             a = Assignment(
